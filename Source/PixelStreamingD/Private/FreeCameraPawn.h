@@ -133,4 +133,9 @@ private:
 	float GetEffectiveDistance() const;
 	float GetDistanceFactor() const;
 	void UpdateFOVFromVirtualDistance();
+
+	void CancelAllInteractions();
+
+	bool ValidateDragState();
+	
 };

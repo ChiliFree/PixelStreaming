@@ -5,8 +5,10 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/InputSettings.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
 #include "InputCoreTypes.h"
 
 
@@ -49,11 +51,24 @@ void AFreeCameraPawn::BeginPlay()
 	if (CachedPC.IsValid())
 	{
 		CachedPC->bShowMouseCursor = true;
+
+		// 初始 UI+Game，让用户能点到界面
 		FInputModeGameAndUI Mode;
 		Mode.SetHideCursorDuringCapture(false);
+		Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		CachedPC->SetInputMode(Mode);
+
+		// 可选：关闭点击/悬停事件，减少浏览器端额外消息处理
+		CachedPC->bEnableClickEvents = false;
+		CachedPC->bEnableMouseOverEvents = false;
 	}
 
+	// 关闭全局鼠标平滑（减少延迟和“黏手”）
+	if (UInputSettings* Settings = const_cast<UInputSettings*>(GetDefault<UInputSettings>()))
+	{
+		Settings->bEnableMouseSmoothing = false;
+	}
+	
 	if (bUseFOVZoom)
 	{
 		VirtualDistance = SpringArm->TargetArmLength;
@@ -72,6 +87,9 @@ void AFreeCameraPawn::Tick(float DeltaTime)
 		CachedPC = Cast<APlayerController>(GetController());
 	}
 
+	if (!ValidateDragState())
+		return;
+
 	FVector2D MouseDelta(0.f, 0.f);
 	if (CachedPC.IsValid())
 	{
@@ -79,20 +97,31 @@ void AFreeCameraPawn::Tick(float DeltaTime)
 		CachedPC->GetInputMouseDelta(dx, dy);
 		MouseDelta = FVector2D(dx, dy);
 	}
+	// 根据分辨率/灵敏度调
+	const float MaxDeltaPerFrame = 90.f;
+	MouseDelta.X = FMath::Clamp(MouseDelta.X, -MaxDeltaPerFrame, MaxDeltaPerFrame);
+	MouseDelta.Y = FMath::Clamp(MouseDelta.Y, -MaxDeltaPerFrame, MaxDeltaPerFrame);
 
-	if (bIsRotating && (MouseDelta.SizeSquared() > 0.f))
+	static FVector2D SmoothedDelta = FVector2D::ZeroVector;
+	// 0..1，越大越跟手
+	const float SmoothAlpha = 0.5f;
+	SmoothedDelta = FMath::Lerp(SmoothedDelta, MouseDelta, SmoothAlpha);
+	const FVector2D UseDelta = SmoothedDelta;
+	
+
+	if (bIsRotating && (UseDelta.SizeSquared() > 0.f))
 	{
-		ApplyLook(MouseDelta, DeltaSeconds);
+		ApplyLook(UseDelta, DeltaSeconds);
 	}
 
-	if (bIsPanning && (MouseDelta.SizeSquared() > 0.f))
+	if (bIsPanning && (UseDelta.SizeSquared() > 0.f))
 	{
-		ApplyPan(MouseDelta, DeltaSeconds);
+		ApplyPan(UseDelta, DeltaSeconds);
 	}
 
-	if (bIsZoomingDrag && FMath::Abs(MouseDelta.Y) > KINDA_SMALL_NUMBER)
+	if (bIsZoomingDrag && FMath::Abs(UseDelta.Y) > KINDA_SMALL_NUMBER)
 	{
-		ApplyZoom(MouseDelta.Y, true, DeltaSeconds);
+		ApplyZoom(UseDelta.Y, true, DeltaSeconds);
 	}
 }
 
@@ -243,8 +272,8 @@ void AFreeCameraPawn::ClampControlPitch() const
 void AFreeCameraPawn::UpdateMouseCapture()
 {
     if (!CachedPC.IsValid()) return;
-
-    const bool bAnyDrag = bIsRotating || bIsPanning || bIsZoomingDrag;
+	const bool bAnyDrag = bIsRotating || bIsPanning || bIsZoomingDrag;
+		
     if (bAnyDrag)
     {
         FInputModeGameOnly Mode;
@@ -288,4 +317,59 @@ void AFreeCameraPawn::UpdateFOVFromVirtualDistance()
 	const float Alpha = FMath::GetRangePct(MinArmLength, MaxArmLength, VirtualDistance);
 	const float NewFOV = FMath::Lerp(MinFOV, MaxFOV, Alpha);
 	Camera->SetFieldOfView(NewFOV);
+}
+
+void AFreeCameraPawn::CancelAllInteractions()
+{
+	const bool bWasDragging = bIsRotating || bIsPanning || bIsZoomingDrag;
+	bIsRotating = false;
+	bIsPanning = false;
+	bIsZoomingDrag = false;
+
+	if (bWasDragging)
+	{
+		if (CachedPC.IsValid())
+		{
+			CachedPC->FlushPressedKeys();
+		}
+		UpdateMouseCapture();
+	}
+}
+
+bool AFreeCameraPawn::ValidateDragState()
+{
+	bool bChanged = true;
+
+	if (CachedPC.IsValid())
+	{
+		if (bIsRotating && !CachedPC->IsInputKeyDown(EKeys::LeftMouseButton))
+		{
+			bIsRotating = false; bChanged = false;
+		}
+		if (bIsPanning && !CachedPC->IsInputKeyDown(EKeys::RightMouseButton))
+		{
+			bIsPanning = false; bChanged = false;
+		}
+		if (bIsZoomingDrag && !CachedPC->IsInputKeyDown(EKeys::MiddleMouseButton))
+		{
+			bIsZoomingDrag = false; bChanged = false;
+		}
+	}
+
+	if (UWorld* World = GetWorld())
+	{
+		if (UGameViewportClient* GVC = World->GetGameViewport())
+		{
+			if (GVC->Viewport && !GVC->Viewport->HasFocus())
+			{
+				if (bIsRotating || bIsPanning || bIsZoomingDrag)
+				{
+					bIsRotating = bIsPanning = bIsZoomingDrag = false;
+					bChanged = true;
+				}
+			}
+		}
+	}
+
+	return bChanged;
 }

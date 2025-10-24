@@ -7,6 +7,9 @@
     "store_password": "node ./modules/authentication/db/store_password.js --usersFile=./modules/authentication/db/users.json",
     "start": "npm install && node  cirrus.js"
   },
+  "Assets": [
+    "config.json"
+  ],
   "bin":"cirrus.js",
   "license": "ISC",
   "dependencies": {

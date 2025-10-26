@@ -17,6 +17,10 @@
 		{
 			"Name": "PixelStreaming",
 			"Enabled": true
+		},
+		{
+			"Name": "SunPosition",
+			"Enabled": true
 		}
 	],
 	"EpicSampleNameHash": "2106119423"

@@ -8,9 +8,9 @@ start "WebServer" "%WEB_EXE%"
 
 echo Web Server start successfully.
 
-timeout /t 3 /nobreak >nul
+@REM timeout /t 3 /nobreak >nul
 
-start "PixelStreamingD" "%~dp0PixelStreamingD.exe"
-echo PixelStreamingD start successfully.
+@REM start "PixelStreamingD" "%~dp0PixelStreamingD.exe"
+@REM echo PixelStreamingD start successfully.
 
 exit /b 0

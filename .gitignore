@@ -11,3 +11,16 @@ PixelStreamingD.png
 Build/
 Windows/
 Samples/
+Content/HoudiniEngine/
+Content/Project/
+Content/WanLi/
+SignallingWebServer/Output/logs/
+Content/Maps/WanLi_City.umap
+Content/Maps/FreeCameraT1.umap
+SignallingWebServer/WebServer.exe
+SignallingWebServer/Output/Output_1.zip
+SignallingWebServer/Output/PixelStreamingServer.exe.lnk
+SignallingWebServer/Output/PixelStreamingServerD.exe.lnk
+SignallingWebServer/Output/Wanli_v0.2.zip
+SignallingWebServer/Output/Wanli_v0.3.zip
+SignallingWebServer/Output/Wanli_v0.4.zip

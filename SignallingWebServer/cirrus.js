@@ -295,7 +295,7 @@ if (config.UseHTTPS) {
 	});
 }
 
-console.logColor(logging.Cyan, `Running Cirrus - The Pixel Streaming reference implementation signalling server for Unreal Engine 4.27.`);
+console.logColor(logging.Cyan, `Running Cirrus - The Pixel Streaming reference implementation signalling server for Unreal Engine.`);
 
 let WebSocket = require('ws');
 let streamerServer = new WebSocket.Server({ port: streamerPort, backlog: 1 });

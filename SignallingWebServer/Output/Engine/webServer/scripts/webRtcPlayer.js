@@ -299,7 +299,7 @@
                 //console.log('Printing Stats');
 
                 let newStat = {};
-                console.log('----------------------------- Stats start -----------------------------');
+                // console.log('----------------------------- Stats start -----------------------------');
                 stats.forEach(stat => {
 //                    console.log(JSON.stringify(stat, undefined, 4));
                     if (stat.type == 'inbound-rtp' 

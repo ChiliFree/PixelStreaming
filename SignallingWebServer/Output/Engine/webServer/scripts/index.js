@@ -26,12 +26,13 @@ var CommandMapCache = {};
 async function SendUserCommand(command, param){
     return new Promise(function(resolve, reject){
         var uuid = generateUUID();
-        emitUIInteraction({
-            type: "UserCommand",
-            uuid: uuid,
-            command: command,
-            param: param
-        });
+        // emitUIInteraction({
+        //     type: "UserCommand",
+        //     uuid: uuid,
+        //     command: command,
+        //     param: param
+        // });
+        emitUIInteraction(param);
         CommandMapCache[uuid] = {resolve: resolve, reject: reject};
     });
 }

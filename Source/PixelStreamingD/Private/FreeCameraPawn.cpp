@@ -52,27 +52,37 @@ void AFreeCameraPawn::BeginPlay()
 	{
 		CachedPC->bShowMouseCursor = true;
 
-		// 初始 UI+Game，让用户能点到界面
 		FInputModeGameAndUI Mode;
 		Mode.SetHideCursorDuringCapture(false);
 		Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		CachedPC->SetInputMode(Mode);
 
-		// 可选：关闭点击/悬停事件，减少浏览器端额外消息处理
 		CachedPC->bEnableClickEvents = false;
 		CachedPC->bEnableMouseOverEvents = false;
 	}
 
-	// 关闭全局鼠标平滑（减少延迟和“黏手”）
 	if (UInputSettings* Settings = const_cast<UInputSettings*>(GetDefault<UInputSettings>()))
 	{
 		Settings->bEnableMouseSmoothing = false;
 	}
+
+	// SetActorLocation(InitialCameraLocation);
+	// OrbitTarget = InitialTargetLocation;
+	//
+	// const FVector Dir = (OrbitTarget - GetActorLocation()).GetSafeNormal();
+	// const FRotator NewRot = Dir.Rotation();
+	// SetActorRotation(NewRot);
 	
 	if (bUseFOVZoom)
 	{
 		VirtualDistance = SpringArm->TargetArmLength;
 		UpdateFOVFromVirtualDistance();
+	}
+
+	
+	if (bSetupInitialView)
+	{
+		ApplyInitialView(true);
 	}
 }
 
@@ -97,13 +107,11 @@ void AFreeCameraPawn::Tick(float DeltaTime)
 		CachedPC->GetInputMouseDelta(dx, dy);
 		MouseDelta = FVector2D(dx, dy);
 	}
-	// 根据分辨率/灵敏度调
 	const float MaxDeltaPerFrame = 90.f;
 	MouseDelta.X = FMath::Clamp(MouseDelta.X, -MaxDeltaPerFrame, MaxDeltaPerFrame);
 	MouseDelta.Y = FMath::Clamp(MouseDelta.Y, -MaxDeltaPerFrame, MaxDeltaPerFrame);
 
 	static FVector2D SmoothedDelta = FVector2D::ZeroVector;
-	// 0..1，越大越跟手
 	const float SmoothAlpha = 0.5f;
 	SmoothedDelta = FMath::Lerp(SmoothedDelta, MouseDelta, SmoothAlpha);
 	const FVector2D UseDelta = SmoothedDelta;
@@ -213,7 +221,6 @@ void AFreeCameraPawn::ApplyPan(const FVector2D& MouseDelta, float DT)
 
 void AFreeCameraPawn::ApplyZoom(float Axis, bool bFromDrag, float DT)
 {
-    // Axis>0 表示拉近（向前）
     const float BaseAmount  = bFromDrag ? (Axis * ZoomSpeed * DT / 10.f) : (Axis * ZoomSpeed);
 	const float DistFactor = bScaleZoomByDistance ? GetDistanceFactor() : 1.f;
 	const float Amount = BaseAmount * DistFactor;
@@ -229,17 +236,6 @@ void AFreeCameraPawn::ApplyZoom(float Axis, bool bFromDrag, float DT)
         VirtualDistance = FMath::Clamp(VirtualDistance - Amount, MinArmLength, MaxArmLength);
         UpdateFOVFromVirtualDistance();
     }
-
-	
-    // if (bUseFOVZoom)
-    // {
-    //     const float NewFOV = FMath::Clamp(Camera->FieldOfView - Amount * (FOVZoomSpeed / FMath::Max(ZoomSpeed, 1.f)), MinFOV, MaxFOV);
-    //     Camera->SetFieldOfView(NewFOV);
-    //     return;
-    // }
-    //
-    // const float NewArm = FMath::Clamp(SpringArm->TargetArmLength - Amount, MinArmLength, MaxArmLength);
-    // SpringArm->TargetArmLength = NewArm;
 }
 
 void AFreeCameraPawn::GetPlanarViewAxes(FVector& OutForward, FVector& OutRight) const
@@ -250,7 +246,6 @@ void AFreeCameraPawn::GetPlanarViewAxes(FVector& OutForward, FVector& OutRight) 
     FVector Fwd = RM.GetScaledAxis(EAxis::X);
     FVector Right = RM.GetScaledAxis(EAxis::Y);
 
-    // 投影到水平面，避免 Pitch 造成上下漂移
     Fwd.Z = 0.f; Right.Z = 0.f;
     Fwd = Fwd.GetSafeNormal();
     Right = Right.GetSafeNormal();
@@ -306,7 +301,6 @@ float AFreeCameraPawn::GetDistanceFactor() const
 		return FMath::Clamp(CurveValue, DistanceScaleMin, DistanceScaleMax);
 	}
 
-	// 连续幂函数：factor = clamp( (Dist/ReferenceDistance)^Exponent )
 	const float Ratio = Dist / FMath::Max(ReferenceDistance, 1.f);
 	const float Raw = FMath::Pow(Ratio, DistanceScaleExponent);
 	return FMath::Clamp(Raw, DistanceScaleMin, DistanceScaleMax);
@@ -372,4 +366,44 @@ bool AFreeCameraPawn::ValidateDragState()
 	}
 
 	return bChanged;
+}
+
+void AFreeCameraPawn::ApplyInitialView(bool bRespectPitchClamp)
+{
+	OrbitTarget = InitialLookPoint;
+	SetActorLocation(OrbitTarget, false, nullptr, ETeleportType::TeleportPhysics);
+
+	float Dist = FMath::Clamp(InitialDistance, MinArmLength, MaxArmLength);
+	if (!bUseFOVZoom)
+	{
+		SpringArm->TargetArmLength = Dist;
+		VirtualDistance = SpringArm->TargetArmLength;
+	}
+	else
+	{
+		SpringArm->TargetArmLength = Dist;
+		VirtualDistance = Dist;
+		UpdateFOVFromVirtualDistance();
+	}
+
+	if (Controller)
+	{
+		Controller->SetControlRotation(InitialViewAngles);
+		if (bRespectPitchClamp)
+		{
+			ClampControlPitch();
+		}
+	}
+	else
+	{
+		SetActorRotation(InitialViewAngles);
+	}
+}
+
+void AFreeCameraPawn::SetLookPointAngleDistance(const FVector& NewLookPoint, const FRotator& NewAngles, float NewDistance, bool bRespectPitchClamp)
+{
+	InitialLookPoint   = NewLookPoint;
+	InitialViewAngles  = NewAngles;
+	InitialDistance    = NewDistance;
+	ApplyInitialView(bRespectPitchClamp);
 }

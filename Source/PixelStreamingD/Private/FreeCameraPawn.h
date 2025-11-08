@@ -104,14 +104,28 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DistanceScaling", meta=(EditCondition="DistanceScaleCurve!=nullptr"))
     float CurveDistanceMax = 5000.f;
 
+	
+	UPROPERTY(EditAnywhere, Category="InitView")
+	bool bSetupInitialView = true;
+	
+	UPROPERTY(EditAnywhere, Category="InitView", meta=(EditCondition="bSetupInitialView"))
+	FVector InitialLookPoint = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, Category="InitView", meta=(EditCondition="bSetupInitialView"))
+	FRotator InitialViewAngles = FRotator(-20.f, 180.f, 0.f);
+
+	UPROPERTY(EditAnywhere, Category="InitView", meta=(EditCondition="bSetupInitialView", ClampMin="0.0"))
+	float InitialDistance = 800.f;
+
 private:
     bool bIsRotating = false;
     bool bIsPanning = false;
     bool bIsZoomingDrag = false;
 	
-    float VirtualDistance = 800.f;
+	float VirtualDistance = 800.f;
 
-    // Cached controller
+	FVector OrbitTarget = FVector::ZeroVector;
+
     TWeakObjectPtr<APlayerController> CachedPC;
 
     void OnLMBPressed();
@@ -138,4 +152,10 @@ private:
 
 	bool ValidateDragState();
 	
+	void ApplyInitialView(bool bRespectPitchClamp = true);
+
+public:
+
+	UFUNCTION(BlueprintCallable, Category="InitView")
+	void SetLookPointAngleDistance(const FVector& NewLookPoint, const FRotator& NewAngles, float NewDistance, bool bRespectPitchClamp = true);
 };

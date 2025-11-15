@@ -37,7 +37,7 @@
 				e.source.postMessage(ret, e.origin == "null" ? "*" : e.origin);
 			}
 		}
-		
+
 		//postMessage
 		function OnUserEvent(command, param) {
 			console.log("postMessage: ", param);
@@ -54,7 +54,7 @@
 		function EndInputBenchmark() {
 			endInputBenchmark();
 		}
-		
+
 		window.addEventListener("load", function () {
 			if (window.parent == window) {
 				testUI.style.display = "block";
@@ -63,7 +63,19 @@
 				testUI.style.display = "none";
 				// overlay.style.display = "none";
 			}
-		})
+		});
+
+		window.addEventListener("message", (event) => {
+			const msg = event.data;
+			if (msg.type !== 'IFRAME')
+				return;
+
+			console.log("收到Iframe消息：", msg);
+			UISwitchTime(msg.data);
+			// 回复
+			event.source.postMessage({ type: msg.type, text: '消息接收成功！' }, event.origin == "null" ? "*" : event.origin);
+		});
+
 		//Test Event
 		async function UISwitchTime(data) {
 			var ret = await ToUEMessage(data);
@@ -76,12 +88,12 @@
 <body onload="load()">
 	<div id="testUI">
 		<div>
-			<input type="button" onclick="UISwitchTime('sunny');"
-				style="position: fixed;top:40px; z-index: 99;" value="晴天">
+			<input type="button" onclick="UISwitchTime('sunny');" style="position: fixed;top:40px; z-index: 99;"
+				value="晴天">
 		</div>
 		<div>
-			<input type="button" onclick="UISwitchTime('night');"
-				style="position: fixed;top:80px; z-index: 99;" value="夜晚">
+			<input type="button" onclick="UISwitchTime('night');" style="position: fixed;top:80px; z-index: 99;"
+				value="夜晚">
 		</div>
 	</div>
 	<div id="playerUI">

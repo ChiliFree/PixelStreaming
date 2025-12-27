@@ -108,13 +108,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category="InitView")
 	bool bSetupInitialView = true;
 	
-	UPROPERTY(EditAnywhere, Category="InitView", meta=(EditCondition="bSetupInitialView"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="InitView", meta=(EditCondition="bSetupInitialView"))
 	FVector InitialLookPoint = FVector::ZeroVector;
 
-	UPROPERTY(EditAnywhere, Category="InitView", meta=(EditCondition="bSetupInitialView"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="InitView", meta=(EditCondition="bSetupInitialView"))
 	FRotator InitialViewAngles = FRotator(-20.f, 180.f, 0.f);
 
-	UPROPERTY(EditAnywhere, Category="InitView", meta=(EditCondition="bSetupInitialView", ClampMin="0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="InitView", meta=(EditCondition="bSetupInitialView", ClampMin="0.0"))
 	float InitialDistance = 800.f;
 
 private:

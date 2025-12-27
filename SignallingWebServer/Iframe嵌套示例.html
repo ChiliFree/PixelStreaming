@@ -40,12 +40,23 @@
     <h1>Iframe页面</h1>
     <button onclick="sendMessageToIframe({data: 'night'})">黑夜</button>
     <button onclick="sendMessageToIframe({data: 'sunny'})">白天</button>
+    <button onclick="sendMessageToIframe({data: 'cloudy'})">晴天</button>
+    <button onclick="sendMessageToIframe({data: 'rain'})">雨天</button>
+    <button onclick="sendMessageToIframe({data: 'snow'})">雪天</button>
+    <button onclick="sendMessageToIframe({data: 'OpenOutside'})">进入园区</button>
+    <button onclick="sendMessageToIframe({data: 'OpenInside'})">进入室内</button>
+    <button onclick="sendMessageToIframe({data: 'PlayAnim_Inside'})">室内漫游</button>
+    <button onclick="sendMessageToIframe({data: 'PlayAnim_Outside_In'})">室外内圈漫游</button>
+    <button onclick="sendMessageToIframe({data: 'PlayAnim_Outside_Out'})">室外外圈漫游</button>
+    <button onclick="sendMessageToIframe({data: 'PlayAnim_Outside_Combine'})">合并漫游</button>
+    <button onclick="sendMessageToIframe({data: 'StopAnim'})">停止漫游</button>
+    <button onclick="sendMessageToIframe({data: 'PauseAnim'})">暂停漫游</button>
 
     <p id="received" style="margin-top: 10px; color: blue;">
         等待回复...
     </p>
 
-    <iframe id="embeddedPage" src="http://127.0.0.1:80/" width="800" height="600" onload="initIframe()"
+    <iframe id="embeddedPage" src="http://127.0.0.1:80/" width="1280" height="360" onload="initIframe()"
         style="border: 1px solid #ccc;"></iframe>
 </body>
 

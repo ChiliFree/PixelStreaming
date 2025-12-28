@@ -115,9 +115,6 @@ public:
 	void ActivateStreamingLevel();
 
 	UFUNCTION(BlueprintCallable)
-	bool IsRunningOnServer();
-
-	UFUNCTION(BlueprintCallable)
 	void ResetStreamingLevel();
 
 	UFUNCTION(BlueprintCallable)

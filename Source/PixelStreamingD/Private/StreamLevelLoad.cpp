@@ -15,7 +15,7 @@ void UStreamLevelLoad::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(!bIsRunningOnServer && IsRunningOnServer())
+	if(!bIsRunningOnServer)
 		return;
 	
 	ActivateLevelIndex = StartLoadLevelIndex;
@@ -56,7 +56,7 @@ void UStreamLevelLoad::InitLevelStart()
 
 void UStreamLevelLoad::ActivateStreamingLevel()
 {
-	if(!bIsRunningOnServer && IsRunningOnServer())
+	if(!bIsRunningOnServer)
 		return;
 
 	if (bIsAlwaysLoadedLevel)
